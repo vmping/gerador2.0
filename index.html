@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de XML vmPing</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-6">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h2 class="mb-0">
+                            <i class="fas fa-network-wired me-2"></i>
+                            vmPing
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <!-- Flash Messages -->
+                        <div id="alertContainer"></div>
+
+                        <!-- Information Alert -->
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Esta ferramenta gera um pacote ZIP contendo o programa vmPing e o arquivo de configuração modificado com os endereços IP adicionados abaixo.
+                        </div>
+
+                        <!-- Main Form -->
+                        <form id="configForm">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="oct1" class="form-label">
+                                        <i class="fas fa-sitemap me-1"></i>
+                                        Primeiro Octeto
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        class="form-control" 
+                                        id="oct1" 
+                                        name="oct1" 
+                                        min="0" 
+                                        max="255" 
+                                        required
+                                        placeholder="ex: 192"
+                                    >
+                                    <div class="form-text">Faixa: 0-255</div>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label for="oct2" class="form-label">
+                                        <i class="fas fa-sitemap me-1"></i>
+                                        Segundo Octeto
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        class="form-control" 
+                                        id="oct2" 
+                                        name="oct2" 
+                                        min="0" 
+                                        max="255" 
+                                        required
+                                        placeholder="ex: 168"
+                                    >
+                                    <div class="form-text">Faixa: 0-255</div>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label for="oct3" class="form-label">
+                                        <i class="fas fa-sitemap me-1"></i>
+                                        Terceiro Octeto
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        class="form-control" 
+                                        id="oct3" 
+                                        name="oct3" 
+                                        min="0" 
+                                        max="255" 
+                                        required
+                                        placeholder="ex: 0"
+                                    >
+                                    <div class="form-text">Faixa: 0-255</div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="java_num" class="form-label">
+                                    <i class="fab fa-java me-1"></i>
+                                    Número Java (4 dígitos)
+                                </label>
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    id="java_num" 
+                                    name="java_num" 
+                                    pattern="[0-9]{4}" 
+                                    maxlength="4" 
+                                    required
+                                    placeholder="ex: 1234"
+                                >
+                                <div class="form-text">Deve ter exatamente 4 dígitos</div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-download me-2"></i>
+                                    Download Pacote ZIP
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Example Section -->
+                        <div class="mt-4">
+                            <h6 class="text-muted">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                Exemplo:
+                            </h6>
+                            <div class="bg-dark p-3 rounded">
+                                <small class="text-muted">
+                                    Entrada: Primeiro Octeto = <span class="text-warning">192</span>, Segundo Octeto = <span class="text-warning">168</span>, Terceiro Octeto = <span class="text-warning">0</span><br>
+                                    Resultado: <code class="text-info">x.x.x.1</code> → <code class="text-success">192.168.0.1</code>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-center text-muted">
+                        <small>
+                            <i class="fas fa-shield-alt me-1"></i>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script>
+        // XML template
+        const xmlTemplate = `<?xml version="1.0" encoding="utf-8"?>
+<vmping>
+  <aliases>
+    <alias host="10.x.x.60">Farmaceutico</alias>
+    <alias host="10.x.x.12">Banco-12</alias>
+    <alias host="10.x.x.30">Gerente</alias>
+    <alias host="10.x.x.70">Saber</alias>
+    <alias host="10.x.x.240">Telefone-IP</alias>
+    <alias host="10.x.x.31">Consulta-Preco-1</alias>
+    <alias host="10.x.x.32">Consulta-Preco-2</alias>
+    <alias host="10.x.x.44">Wifi1-44</alias>
+    <alias host="10.x.x.252">Wifi-252</alias>
+    <alias host="10.x.x.61">Impressora-Cupom</alias>
+    <alias host="10.x.x.62">Impressora-Controlados</alias>
+    <alias host="10.x.x.29">Impressora-Laser</alias>
+    <alias host="10.x.x.11">TC1</alias>
+    <alias host="10.x.x.13">TC2</alias>
+    <alias host="10.x.x.14">TC3</alias>
+    <alias host="10.x.x.15">TC4</alias>
+    <alias host="10.x.x.16">TC5</alias>
+    <alias host="10.x.x.17">TC6</alias>
+    <alias host="10.x.x.18">TC7</alias>
+    <alias host="10.x.x.19">TC8</alias>
+    <alias host="10.x.x.81">SAT1</alias>
+    <alias host="10.x.x.82">SAT2</alias>
+    <alias host="10.x.x.83">SAT3</alias>
+    <alias host="10.x.x.84">SAT4</alias>
+    <alias host="10.x.x.1">PDV1</alias>
+    <alias host="10.x.x.2">PDV2</alias>
+    <alias host="10.x.x.3">PDV3</alias>
+    <alias host="10.x.x.4">PDV4</alias>
+  </aliases>
+  <favorites>
+    <favorite title="JAVA" columncount="5">
+      <host>10.x.x.60</host>
+      <host>10.x.x.12</host>
+      <host>10.x.x.30</host>
+      <host>10.x.x.70</host>
+      <host>10.x.x.240</host>
+      <host>10.x.x.31</host>
+      <host>10.x.x.32</host>
+      <host>10.x.x.44</host>
+      <host>10.x.x.252</host>
+      <host>10.x.x.61</host>
+      <host>10.x.x.62</host>
+      <host>10.x.x.29</host>
+      <host>10.x.x.11</host>
+      <host>10.x.x.13</host>
+      <host>10.x.x.14</host>
+      <host>10.x.x.15</host>
+      <host>10.x.x.16</host>
+      <host>10.x.x.17</host>
+      <host>10.x.x.18</host>
+      <host>10.x.x.19</host>
+      <host>10.x.x.81</host>
+      <host>10.x.x.82</host>
+      <host>10.x.x.83</host>
+      <host>10.x.x.84</host>
+      <host>10.x.x.1</host>
+      <host>10.x.x.2</host>
+      <host>10.x.x.3</host>
+      <host>10.x.x.4</host>
+    </favorite>
+  </favorites>
+  <configuration />
+  <colors />
+</vmping>`;
+
+        function showAlert(message, type = 'danger') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                <i class="fas fa-${type === 'danger' ? 'exclamation-triangle' : 'check-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.appendChild(alert);
+            setTimeout(() => { if (alert.parentNode) alert.remove(); }, 5000);
+        }
+
+        function validateInput(oct1, oct2, oct3, javaNum) {
+            const errors = [];
+            const o1 = parseInt(oct1, 10);
+            const o2 = parseInt(oct2, 10);
+            const o3 = parseInt(oct3, 10);
+
+            if (isNaN(o1) || o1 < 0 || o1 > 255) errors.push('O primeiro octeto deve estar entre 0 e 255');
+            if (isNaN(o2) || o2 < 0 || o2 > 255) errors.push('O segundo octeto deve estar entre 0 e 255');
+            if (isNaN(o3) || o3 < 0 || o3 > 255) errors.push('O terceiro octeto deve estar entre 0 e 255');
+
+            if (!/^\d{4}$/.test(javaNum)) errors.push('O número Java deve ter exatamente 4 dígitos');
+
+            return errors;
+        }
+
+        function replaceIPs(xml, oct1, oct2, oct3) {
+            return xml.replace(/10\.x\.x\./g, `${oct1}.${oct2}.${oct3}.`);
+        }
+
+        function replaceJavaTitle(xml, javaNum) {
+            return xml.replace('<favorite title="JAVA"', `<favorite title="${javaNum}"`);
+        }
+
+        async function generateZip(oct1, oct2, oct3, javaNum) {
+            try {
+                const [n1, n2, n3] = [parseInt(oct1, 10).toString(), parseInt(oct2, 10).toString(), parseInt(oct3, 10).toString()];
+                let modifiedXml = replaceIPs(xmlTemplate, n1, n2, n3);
+                modifiedXml = replaceJavaTitle(modifiedXml, javaNum);
+
+                const exeResponse = await fetch('vmPing.exe');
+                if (!exeResponse.ok) throw new Error('Erro ao carregar o executável vmPing');
+                const exeBlob = await exeResponse.blob();
+
+                const zip = new JSZip();
+                zip.file('vmPing.xml', modifiedXml);
+                zip.file('vmPing.exe', exeBlob);
+
+                const content = await zip.generateAsync({type: 'blob'});
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `vmPing_package_${javaNum}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showAlert('Pacote ZIP gerado com sucesso!', 'success');
+            } catch (error) {
+                console.error('Error generating ZIP:', error);
+                showAlert(`Erro ao gerar o pacote: ${error.message}`);
+            }
+        }
+
+        document.getElementById('configForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const oct1 = document.getElementById('oct1').value.trim();
+            const oct2 = document.getElementById('oct2').value.trim();
+            const oct3 = document.getElementById('oct3').value.trim();
+            const javaNum = document.getElementById('java_num').value.trim();
+
+            document.getElementById('alertContainer').innerHTML = '';
+            const errors = validateInput(oct1, oct2, oct3, javaNum);
+            if (errors.length > 0) {
+                errors.forEach(err => showAlert(err));
+                return;
+            }
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Gerando...';
+            submitBtn.disabled = true;
+
+            try {
+                await generateZip(oct1, oct2, oct3, javaNum);
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        document.getElementById('java_num').addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '').slice(0, 4);
+        });
+    </script>
+</body>
+</html>
